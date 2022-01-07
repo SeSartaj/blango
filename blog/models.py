@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 # Create your models here.
 class Tag(models.Model):
@@ -9,8 +11,22 @@ class Tag(models.Model):
     return self.value
   
 
+class Comment(models.Model):
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField()
+    # post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+    created_at = models.DateTimeField(auto_now_add=True, blank=True)
+    modified_at = models.DateTimeField(auto_now=True, blank=True)
+
+    def __str__(self):
+      return self.content
+
+
 class Post(models.Model):
-  autho = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+  author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
   created_at = models.DateTimeField(auto_now_add=True)
   modified_at = models.DateTimeField(auto_now_add=True)
   published_at = models.DateTimeField(auto_now_add=True,null=True)
@@ -19,7 +35,10 @@ class Post(models.Model):
   summary = models.TextField(max_length=500)
   content = models.TextField()
   tags = models.ManyToManyField(Tag, related_name="posts")
+  comments = GenericRelation(Comment)
 
   def __str__(self):
       return self.title
+
+
   
